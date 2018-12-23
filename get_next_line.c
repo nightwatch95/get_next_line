@@ -13,22 +13,13 @@
 #include "get_next_line.h"
 #include <stdio.h>
 
-// static void	init_buffers(char **buffers)
-// {
-// 	int i;
-
-// 	i = 0;
-// 	buffers = (char **)malloc(sizeof(char *) * FD_LIMIT);
-// 	while (i < FD_LIMIT)
-// 		buffers[i++] = NULL;
-// }
-
 int	get_next_line(const int fd, char **line)
 {
 	int			ret;
 	char		*buf;
 	static char *temp;
 	char 		*temp2;
+	int			len;
 
 	if (fd < 0 || !line || BUFF_SIZE < 1 || fd > FD_LIMIT)
 		return (-1);
@@ -42,7 +33,7 @@ int	get_next_line(const int fd, char **line)
 
 		temp2 = temp;
 		temp = ft_strjoin(temp, buf);
-		free(temp2);
+		//free(temp2);
 
 		if (ft_strchr(buf, '\n'))
 		{
@@ -50,6 +41,11 @@ int	get_next_line(const int fd, char **line)
 			break;
 		}
 	}
+	temp2 = ft_strchr(temp, '\n');
+	*line = (char*)malloc(temp2 - temp);
+	*line = ft_strncpy(*line, temp, temp2 - temp);
+	temp = temp2 + 1;
+
 	//ft_strsub(temp, 0, ft_strchr(buf, '\n'))
 
 	printf("%s",temp);
@@ -65,9 +61,15 @@ int	main(int argc, char **argv)
 
 	fd = open(argv[1], O_RDONLY);
 	get_next_line(fd, &line);
-	get_next_line(fd, &line);
-	get_next_line(fd, &line);
 
-	//printf("line: \n%s",  line);
+	printf("line: %s\n",  line);
+
+		get_next_line(fd, &line);
+
+	printf("line: %s",  line);
+		get_next_line(fd, &line);
+
+	printf("line: %s",  line);
+
 	return (0);
 }
