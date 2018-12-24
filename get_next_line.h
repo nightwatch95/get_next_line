@@ -13,14 +13,11 @@
 #ifndef GET_NEXT_LINE_H
 
 # define GET_NEXT_LINE_H
-# define BUFF_SIZE 1
-# define FD_LIMIT 4864
+# define BUFF_SIZE	1
+# define FD_LIMIT	4864
+# define CHECK_ERROR(x) if (!x) return (-1);
 
-# include <unistd.h>
-# include <fcntl.h>
-# include <sys/types.h>
-# include <sys/uio.h>
-# include "libft.h"
+# include "libft/libft.h"
 
 int	get_next_line(const int fd, char **line);
 
