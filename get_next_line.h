@@ -15,7 +15,7 @@
 # define GET_NEXT_LINE_H
 # define BUFF_SIZE	1
 # define FD_LIMIT	4864
-# define CHECK_ERROR(x) if (!x) return (-1);
+# define CHECK_ERROR(x) if (!(x)) return (-1);
 
 # include "libft/libft.h"
 

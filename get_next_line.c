@@ -10,123 +10,78 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
-#include <stdio.h>
 #include "get_next_line.h"
+//#include <stdio.h>
+//#include <fcntl.h>
 
 int	get_next_line(const int fd, char **line)
 {
-	int			ret;
 	static char *buf;
-	char		*sub;
-	char		*s;
-	char		b[0];
+	char byte[1];
+	char *chunk = NULL;
+	char *sub = NULL;
+	char *prev = NULL;
 
-	if (fd < 0 || !line || BUFF_SIZE < 1 || fd >= FD_LIMIT ||
-		read(fd, b, 0) < 0)
-		return (-1);
-
+	CHECK_ERROR((line && BUFF_SIZE > 0 && fd >= 0 && fd < FD_LIMIT && read(fd, byte, 0) >= 0));
 	if (!buf)
 		CHECK_ERROR((buf = ft_strnew(BUFF_SIZE)));
-
-	if (!(*line))
-		CHECK_ERROR((*line = ft_strnew(0)));
-
 	if (buf[0] == '\0')
-		ret = read(fd, buf, BUFF_SIZE);
+		buf[read(fd, buf, BUFF_SIZE)] = '\0';
+
 	if (buf[0] == '\0')
 	{
-		free(buf);
+		ft_memdel((void **)&buf);
 		return (0);
 	}
+	CHECK_ERROR((*line = ft_strnew(0)));
+	
+//	printf("BUF: |%s|\n", buf);
 	while (buf[0] != '\0')
 	{
 		sub = ft_strchr(buf, '\n');
 		if (sub)
 		{
-			s = ft_strnew(sub - buf);
-			s = ft_strncpy(s, buf, sub - buf);
-			*line = ft_strjoin(*line, s);
+			CHECK_ERROR((chunk = ft_strnew(sub - buf)));
+			ft_strncpy(chunk, buf, sub - buf);
+			prev = *line;
+			*line = ft_strjoin(prev, chunk);
+			ft_memdel((void **)&chunk);
+			CHECK_ERROR(*line);
+			ft_memdel((void **)&prev);
 			ft_strcpy(buf, sub + 1);
+//			printf("BUFF AFTER: |%s|\n", buf);
 			return (1);
 		}
-		s = ft_strdup(buf);
-		*line = ft_strjoin(*line, s);
-		ret = read(fd, buf, BUFF_SIZE);
-		buf[ret] = '\0';
+		prev = *line;
+		*line = ft_strjoin(prev, buf);
+		CHECK_ERROR(*line);
+		ft_memdel((void **)&prev);
+		buf[read(fd, buf, BUFF_SIZE)] = '\0';
+//		printf("NEW BUF: |%s|\n", buf);
 	}
 	return (1);
 }
 
 
-
-	while ((ret = read(fd, buf, BUFF_SIZE)))
-	{
-		buf[ret] = '\0';
-		temp2 = temp;
-		CHECK_ERROR((temp = ft_strjoin(temp, buf)));
-		free(temp2);
-		if (ft_strchr(buf, '\n'))
-			break;
-	}
-	free(buf);
-	if (!ret && !temp)
-		return (0);
-	temp2 = ft_strchr(temp, '\n');
-	if (temp2)
-	{
-		CHECK_ERROR((*line = ft_strnew(temp2 - temp)));
-		ft_strncpy(*line, temp, temp2 - temp);
-		char *temp3 = temp;
-		CHECK_ERROR((temp = ft_strdup(temp2 + 1)));
-		
-		free(temp3);
-	}
-	else
-	{
-		CHECK_ERROR((*line = ft_strnew(ft_strlen(temp))));
-		ft_strcpy(*line, temp);
-		ft_memdel((void **)&temp);
-	}
-	return (1);
-}
-
-
-#include <fcntl.h>
-
-int	main(int argc, char **argv)
-{
-	int fd;
-	char *line;
-	(void)argc;
-	int	ret;
-	int i;
-
-	fd = open(argv[1], O_RDONLY);
-/*
-	// int ret = 0;
-	while (get_next_line(fd, &line))
-	{
-		printf("line: %s\n",  line);
-		free(line);
-	}
-*/
-	i = 0;
-	while (i < 4)
-	{
-	ret = get_next_line(fd, &line);
-	printf("%d line: %d\t|%p|\n",  i, ret, line);
-//	free(line);
-	i++;
-}
-/*	ret = get_next_line(fd, &line);
-	printf("line: %d\t|%p|\n",  ret, line);
-	free(line);
-	ret = get_next_line(fd, &line);
-	printf("line: %d\t|%p|\n",  ret, line);
-
-	ret = get_next_line(fd, &line);
-	printf("line: %d\t|%p|\n",  ret, line);
-*/
-	return (0);
-}
+// int	main(int argc, char **argv)
+// {
+// 	char *line = NULL;
+// 	CHECK_ERROR(argc > 1);
+// 	int	fd = open(argv[1], O_RDONLY);
+// 	CHECK_ERROR(fd > 0);
+// 	int	ret = 0;
+// 	while ((ret = get_next_line(fd, &line)))
+// 	{
+// 		if (ret == -1)
+// 		{
+// 			printf("get_next_line returned an error\n");
+// 			return (-1);
+// 		}
+// 		printf("ret: %d line: %s\n",  ret, line);
+// 		ft_memdel((void **)&line);
+// 	}
+// 	printf("ret: %d line: %s\n",  ret, line);
+// 	// once again
+// 	printf("ret %d line: %s\n", get_next_line(fd, &line), line);
+// 	return (0);
+// }
