@@ -14,114 +14,66 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-// int	get_next_line(const int fd, char **line)
-// {
-// 	static char *buf;
-// 	char byte[1];
-// 	char *chunk = NULL;
-// 	char *sub = NULL;
-// 	char *prev = NULL;
-
-// 	CHECK_ERROR((line && BUFF_SIZE > 0 && fd >= 0 && fd < FD_LIMIT && read(fd, byte, 0) >= 0));
-// 	if (!buf)
-// 		CHECK_ERROR((buf = ft_strnew(BUFF_SIZE)));
-// 	if (buf[0] == '\0')
-// 		buf[read(fd, buf, BUFF_SIZE)] = '\0';
-// 	if (buf[0] == '\0')
-// 	{
-// 		ft_memdel((void **)&buf);
-// 		return (0);
-// 	}
-// 	CHECK_ERROR((*line = ft_strnew(0)));
-	
-// //	printf("BUF: |%s|\n", buf);
-// 	while (buf[0] != '\0')
-// 	{
-// 		sub = ft_strchr(buf, '\n');
-// 		if (sub)
-// 		{
-// 			CHECK_ERROR((chunk = ft_strnew(sub - buf)));
-// 			ft_strncpy(chunk, buf, sub - buf);
-// 			prev = *line;
-// 			*line = ft_strjoin(prev, chunk);
-// 			ft_memdel((void **)&chunk);
-// 			CHECK_ERROR(*line);
-// 			ft_memdel((void **)&prev);
-// 			ft_strcpy(buf, sub + 1);
-// //			printf("BUFF AFTER: |%s|\n", buf);
-// 			return (1);
-// 		}
-// 		prev = *line;
-// 		*line = ft_strjoin(prev, buf);
-// 		CHECK_ERROR(*line);
-// 		ft_memdel((void **)&prev);
-// 		buf[read(fd, buf, BUFF_SIZE)] = '\0';
-// //		printf("NEW BUF: |%s|\n", buf);
-// 	}
-// 	return (1);
-// }
-
-char *get_buffer(char **buffers, int fd)
+static void init_buffers(char **buffers)
 {
-	char b[1];
+	int i;
 
-	if (BUFF_SIZE > 0 && fd >= 0 && fd < FD_LIMIT && read(fd, b, 0) >= 0)
-		return (NULL);
-	if (!buffers[fd])
-		buffers[fd] = ft_strnew(BUFF_SIZE);
-	return (buffers[fd]);
-}
+	i = -1;
+	while (++i < FD_LIMIT)
+		buffers[i] = NULL;
+} 
 
-int get_line(char **line, char **buf)
+static int read_line(char **buf, int fd, char **line)
 {
-	char *chunk;
-	char *sub;
-	char *prev;
+	char *chunk = NULL;
+	char *sub = NULL;
+	char *prev = NULL;
 
-	sub = ft_strchr(*buf, '\n');
-	if (sub)
+	while ((*buf)[0] != '\0')
 	{
-		CHECK_ERROR((chunk = ft_strnew(sub - *buf)));
-		ft_strncpy(chunk, *buf, sub - *buf);
+		sub = ft_strchr(*buf, '\n');
+		if (sub)
+		{
+			CHECK_ERROR((chunk = ft_strnew(sub - *buf)));
+			ft_strncpy(chunk, *buf, sub - *buf);
+			prev = *line;
+			CHECK_ERROR((*line = ft_strjoin(prev, chunk)));			
+			ft_memdel((void **)&chunk);
+			ft_memdel((void **)&prev);
+			ft_strcpy(*buf, sub + 1);
+			return (1);
+		}
 		prev = *line;
-		*line = ft_strjoin(prev, chunk);
-		ft_memdel((void **)&chunk);
-		CHECK_ERROR(*line);
+		CHECK_ERROR((*line = ft_strjoin(prev, *buf)));
 		ft_memdel((void **)&prev);
-		ft_strcpy(*buf, sub + 1);
-		return (1);
+		(*buf)[read(fd, *buf, BUFF_SIZE)] = '\0';
 	}
-	prev = *line;
-	*line = ft_strjoin(prev, *buf);
-	CHECK_ERROR(*line);
-	ft_memdel((void **)&prev);
-	return (0);
+	return (1);
 }
 
 int	get_next_line(const int fd, char **line)
 {
-	static char *buffers[FD_LIMIT];
-	char		*buf;
-	int			state;
+	static char **buffers;
+	char		byte[1];
 
-	CHECK_ERROR((line && (buf = get_buffer(buffers, fd))));
-	if (!buf)
-		buf = ft_strnew(1);
-	if (buf[0] == '\0')
-		buf[read(fd, buffers[fd], BUFF_SIZE)] = '\0';
-	if (*(buffers[fd]) == '\0')
+	CHECK_ERROR(line && BUFF_SIZE > 0 && fd >= 0 &&
+		fd < FD_LIMIT && read(fd, byte, 0) >= 0);
+	if (!buffers)
 	{
-		ft_memdel((void **)&buf);
+		CHECK_ERROR((buffers = (char**)malloc(sizeof(char*) * FD_LIMIT)));
+		init_buffers(buffers);
+	}	
+	if (!buffers[fd])
+		buffers[fd] = ft_strnew(BUFF_SIZE);
+	if (buffers[fd][0] == '\0')
+		buffers[fd][read(fd, buffers[fd], BUFF_SIZE)] = '\0';
+	if (buffers[fd][0] == '\0')
+	{
+		ft_memdel((void **)&buffers[fd]);
 		return (0);
 	}
 	CHECK_ERROR((*line = ft_strnew(0)));
-	while (buf[0] != '\0')
-	{
-		state = get_line(line, &buf);
-		if (state)
-			return (state);
-		buf[read(fd, buf, BUFF_SIZE)] = '\0';
-	}
+	CHECK_ERROR(read_line(&buffers[fd], fd, line));
 	return (1);
 }
 
@@ -129,19 +81,32 @@ int	main(int argc, char **argv)
 {
 	char *line = NULL;
 	CHECK_ERROR(argc > 1);
-	int	fd = open(argv[1], O_RDONLY);
-	CHECK_ERROR(fd > 0);
+	int	fd1 = open(argv[1], O_RDONLY);
+	int fd2 = open(argv[2], O_RDONLY);
 	int	ret = 0;
-	while ((ret = get_next_line(fd, &line)))
+
+	// ret = get_next_line(fd1, &line);
+	// printf("ret: %d line: %s, fd: %d\n",  ret, line, fd1);
+	// ft_memdel((void**)&line);
+
+	for (int i = 1; i <= 9; i++)
 	{
-		if (ret == -1)
-		{
-			printf("get_next_line returned an error\n");
-			return (-1);
-		}
-		printf("ret: %d line: %s\n",  ret, line);
+		int fd = i % 2 == 0 ? fd1 : fd2;
+
+		ret = get_next_line(fd, &line);
+		printf("ret: %d, fd: %d, line: %s\n",  ret, fd, line);
 		ft_memdel((void **)&line);
 	}
-	printf("ret: %d line: %s\n",  ret, line);
+
+	// while ((ret = get_next_line(fd1, &line)))
+	// {
+	// 	if (ret == -1)
+	// 	{
+	// 		printf("get_next_line returned an error\n");
+	// 		return (-1);
+	// 	}
+	// 	printf("ret: %d line: %s\n",  ret, line);
+	// 	ft_memdel((void **)&line);
+	// }
 	return (0);
 }
