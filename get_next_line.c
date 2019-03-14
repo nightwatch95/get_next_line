@@ -11,10 +11,9 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stdio.h>
 #include <fcntl.h>
 
-static void init_buffers(char **buffers)
+void init_buffers(char **buffers)
 {
 	int i;
 
@@ -23,7 +22,7 @@ static void init_buffers(char **buffers)
 		buffers[i] = NULL;
 } 
 
-static int read_line(char **buf, int fd, char **line)
+int read_line(char **buf, int fd, char **line)
 {
 	char *chunk = NULL;
 	char *sub = NULL;
@@ -85,10 +84,6 @@ int	main(int argc, char **argv)
 	int fd2 = open(argv[2], O_RDONLY);
 	int	ret = 0;
 
-	// ret = get_next_line(fd1, &line);
-	// printf("ret: %d line: %s, fd: %d\n",  ret, line, fd1);
-	// ft_memdel((void**)&line);
-
 	for (int i = 1; i <= 9; i++)
 	{
 		int fd = i % 2 == 0 ? fd1 : fd2;
@@ -97,16 +92,5 @@ int	main(int argc, char **argv)
 		printf("ret: %d, fd: %d, line: %s\n",  ret, fd, line);
 		ft_memdel((void **)&line);
 	}
-
-	// while ((ret = get_next_line(fd1, &line)))
-	// {
-	// 	if (ret == -1)
-	// 	{
-	// 		printf("get_next_line returned an error\n");
-	// 		return (-1);
-	// 	}
-	// 	printf("ret: %d line: %s\n",  ret, line);
-	// 	ft_memdel((void **)&line);
-	// }
 	return (0);
 }
