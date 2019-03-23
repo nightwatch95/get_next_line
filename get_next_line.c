@@ -11,22 +11,21 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <fcntl.h>
 
-void init_buffers(char **buffers)
+static void	init_buffers(char **buffers)
 {
-	int i;
+	int	i;
 
 	i = -1;
 	while (++i < FD_LIMIT)
 		buffers[i] = NULL;
-} 
+}
 
-int read_line(char **buf, int fd, char **line)
+static int	read_line(char **buf, int fd, char **line)
 {
-	char *chunk = NULL;
-	char *sub = NULL;
-	char *prev = NULL;
+	char *chunk;
+	char *sub;
+	char *prev;
 
 	while ((*buf)[0] != '\0')
 	{
@@ -76,21 +75,23 @@ int	get_next_line(const int fd, char **line)
 	return (1);
 }
 
-int	main(int argc, char **argv)
-{
-	char *line = NULL;
-	CHECK_ERROR(argc > 1);
-	int	fd1 = open(argv[1], O_RDONLY);
-	int fd2 = open(argv[2], O_RDONLY);
-	int	ret = 0;
+// #include <fcntl.h>
 
-	for (int i = 1; i <= 9; i++)
-	{
-		int fd = i % 2 == 0 ? fd1 : fd2;
+// int	main(int argc, char **argv)
+// {
+// 	char *line = NULL;
+// 	CHECK_ERROR(argc > 1);
+// 	int	fd1 = open(argv[1], O_RDONLY);
+// 	int fd2 = open(argv[2], O_RDONLY);
+// 	int	ret = 0;
 
-		ret = get_next_line(fd, &line);
-		printf("ret: %d, fd: %d, line: %s\n",  ret, fd, line);
-		ft_memdel((void **)&line);
-	}
-	return (0);
-}
+// 	for (int i = 1; i <= 9; i++)
+// 	{
+// 		int fd = i % 2 == 0 ? fd1 : fd2;
+
+// 		ret = get_next_line(fd, &line);
+// 		printf("ret: %d, fd: %d, line: %s\n",  ret, fd, line);
+// 		ft_memdel((void **)&line);
+// 	}
+// 	return (0);
+// }
